@@ -51,6 +51,8 @@ class ModelTransformer extends AbstractTransformer
             $transformModel = $this->mergeModels($transformModel, $relationShips['cast']);
         }
 
+        $this->parseMeta($model);
+
         return $transformModel;
     }
 
@@ -107,7 +109,7 @@ class ModelTransformer extends AbstractTransformer
         ]);
 
         foreach ($model->getRelations() as $key => $relation) {
-            if (!in_array($key, array_keys($this->transformer->getRelationships()))) continue;
+            if (!in_array($key, array_keys($this->transformer->getRelationships())) || empty($relation)) continue;
 
             if ($relation instanceof PivotApi)
                 continue;
@@ -221,5 +223,13 @@ class ModelTransformer extends AbstractTransformer
 
             return route($routeName, $routeParam);
         });
+    }
+
+    protected function parseMeta($model)
+    {
+        if(!count($this->transformer->getMeta()) || !method_exists($model, 'getMeta') || !count($model->getMeta()))
+            return false;
+
+        $this->response->put(Transformer::ATTR_META, $model->getMeta());
     }
 }
