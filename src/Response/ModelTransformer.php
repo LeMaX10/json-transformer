@@ -9,9 +9,14 @@ use Request;
 
 class ModelTransformer extends AbstractTransformer
 {
+    protected $instance = [];
     public function newInstance($transformer, $castTransformer = false, $merge = false)
     {
-        return new ModelTransformer($transformer, $castTransformer, $merge);
+        $instanceId = (is_object($transformer) ? get_class($transformer) : $transformer) . $castTransformer . $merge;
+        if(!isset($instance[$instanceId]))
+            $instance[$instanceId] = new ModelTransformer($transformer, $castTransformer, $merge);
+
+        return $instance[$instanceId];
     }
 
     public function runTransformData($model)
@@ -38,17 +43,18 @@ class ModelTransformer extends AbstractTransformer
             Transformer::ATTR_ATTRIBUTES => $this->getAttributes($transformCollectedModel)
         ]);
 
-        if (count($model->getRelations())) {
-            $relationShips = $this->parseRelations($model, $this->transformer);
-            $transformModel->put(Transformer::ATTR_RELATIONSHIP, $relationShips['relations']);
-        }
-
         $parseLinks = $this->parseLinks($transformCollectedModel);
         if($parseLinks->count())
             $transformModel->put(Transformer::ATTR_LINKS, $parseLinks);
 
-        if(isset($relationShips['cast'])) {
-            $transformModel = $this->mergeModels($transformModel, $relationShips['cast']);
+        if (count($model->getRelations())) {
+            $relationShips = $this->parseRelations($model, $this->transformer);
+
+            if (isset($relationShips['relations']) && $relationShips['relations']->count())
+                $transformModel->put(Transformer::ATTR_RELATIONSHIP, $relationShips['relations']);
+
+            if (isset($relationShips['cast']))
+                $transformModel = $this->mergeModels($transformModel, $relationShips['cast']);
         }
 
         $this->parseMeta($model);
@@ -108,18 +114,32 @@ class ModelTransformer extends AbstractTransformer
             'relations' => collect([])
         ]);
 
+        $relationsTransformer = $transformer->getRelationships();
         foreach ($model->getRelations() as $key => $relation) {
-            if (!in_array($key, array_keys($this->transformer->getRelationships())) || empty($relation)) continue;
+            if (!in_array($key, array_keys($transformer->getRelationships())) || (empty($relation) || !count($relation))) {
+                $model->setRelation($key, []);
+                continue;
+            }
 
             if ($relation instanceof PivotApi)
+            {
+                $this->setRelation($key, []);
                 continue;
+            }
+
+            if(!$transformer)
+                $transformer = $relation::getTransformer();
+
+            $transformer = isset($relationsTransformer[$key]) ? $relationsTransformer[$key]['transformer'] : $transformer;
+
+            if(!is_object($transformer))
+                $transformer = new $transformer();
 
             if($relation instanceof \Illuminate\Database\Eloquent\Collection) {
                 if(empty($relations->get('relations')->get($key)))
                     $relations->get('relations')->put($key, collect([]));
 
-                $relationTransformer = !is_array($transformer->getRelationShips()) ? ['transformer' => $transformer] : $transformer->getRelationShips()[$key];
-                $collection = $this->newInstance($relationTransformer['transformer'])->runTransformData($relation)->getResponse();
+                $collection = $this->newInstance($transformer)->runTransformData($relation)->getResponse();
 
                 $collection->get('data')->first()->each(function($item) use(&$key, &$relations) {
                     $parseRelation = $this->parseRelation($item);
@@ -133,11 +153,10 @@ class ModelTransformer extends AbstractTransformer
                 continue;
             }
 
-            $transformer = $relation::getTransformer();
             $instanceRelation = $this->newInstance($transformer)->runTransformData($relation)->getResponse();
 
             // В случае если это зависимость к которой кастуем, начинаем кастование
-            if ($this->castTransformer instanceof $transformer) {
+            if ($this->castTransformer && $this->castTransformer instanceof $transformer) {
                 $relations->put('cast', $instanceRelation->get('data')->first());
                 $this->addIncluded($instanceRelation);
                 continue;
