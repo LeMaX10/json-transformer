@@ -116,7 +116,7 @@ class ModelTransformer extends AbstractTransformer
 
         $relationsTransformer = $transformer->getRelationships();
         foreach ($model->getRelations() as $key => $relation) {
-            if (!in_array($key, array_keys($transformer->getRelationships())) || (empty($relation) || !count($relation))) {
+            if (!in_array($key, array_keys($relationsTransformer)) || (empty($relation) || !count($relation))) {
                 $model->setRelation($key, []);
                 continue;
             }
