@@ -44,13 +44,13 @@ class Transformer {
         return $this;
     }
 
-    public function toPaginateResponse($query, PaginationRequest $request)
+    public function toPaginateResponse($query, PaginationRequest $request, $defaultSort = false)
     {
-        $transformData = function() use(&$request, &$query) {
-                if($includes = \Request::input('includes', false))
-                    $query->with(explode(',', $includes));
+        $transformData = function() use(&$request, &$query, &$defaultSort) {
+            if($includes = \Request::input('includes', false))
+                $query->with(explode(',', $includes));
 
-                return (new PaginateTransformer($this->transformer, $this->castTransformer, $this->merge, $request))->runTransformPagination($query);
+            return (new PaginateTransformer($this->transformer, $this->castTransformer, $this->merge, $request, $defaultSort))->runTransformPagination($query);
         };
 
         if($this->cache === true)

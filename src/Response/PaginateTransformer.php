@@ -16,12 +16,14 @@ class PaginateTransformer extends AbstractTransformer {
     protected $pageSize = 'size';
     protected $pageSort = 'sort';
 
+    protected $defaultSort = false;
     protected $paginateQuery = false;
 
-    public function __construct($transformer, $castTransformer, $merge, PaginationRequest $request)
+    public function __construct($transformer, $castTransformer, $merge, PaginationRequest $request, $defaultSort = false)
     {
         parent::__construct($transformer, $castTransformer, $merge);
         $this->request = $request;
+        $this->defaultSort = $defaultSort;
         Paginator::currentPageResolver(function () {
             return $this->request->input(join('.', [$this->pageName, $this->pageNumber]), 1);
         });
@@ -29,8 +31,7 @@ class PaginateTransformer extends AbstractTransformer {
 
     public function runTransformPagination($query) : ModelTransformer
     {
-        $this->paginateQuery = $query;
-        $this->parseSort();
+        $this->paginateQuery = $this->parseSort($query);
         if($this->request->getPagination() !== false) {
             $this->paginateQuery = $this->paginateQuery->paginate($this->request->input(join('.', [$this->pageName, $this->pageSize]), 10));
         }
@@ -46,7 +47,7 @@ class PaginateTransformer extends AbstractTransformer {
 
         if($this->request->getPagination() !== false) {
             $responseModelTransformer->response->put(Transformer::ATTR_META, $this->getMeta())
-                                               ->put(Transformer::ATTR_LINKS, $this->getNavigationLinks());
+                ->put(Transformer::ATTR_LINKS, $this->getNavigationLinks());
         }
 
         $responseModelTransformer->response->put(Transformer::ATTR_DATA, $responseModelTransformer->response->get(Transformer::ATTR_DATA)->shift());
@@ -83,10 +84,22 @@ class PaginateTransformer extends AbstractTransformer {
         return $links;
     }
 
-    private function parseSort() : PaginateTransformer
+    private function parseSort($paginateQuery)
     {
-        if(!$this->paginateQuery || !($sort = $this->request->input('page.sort', false)))
-            return $this;
+        $sort = $this->defaultSort;
+        if($this->request->has('page.sort'))
+            $sort = $this->request->input('page.sort');
+
+        if($sort !== false)
+            $paginateQuery = $this->parseSorting($paginateQuery, $sort);
+
+        return $paginateQuery;
+    }
+
+    private function parseSorting($query, $sort = '')
+    {
+        if(empty($sort))
+            return $query;
 
         $lastKey = '';
         foreach(explode(',', $sort) as $attr) {
@@ -95,11 +108,11 @@ class PaginateTransformer extends AbstractTransformer {
                 continue;
             }
 
-            $this->paginateQuery->orderBy($lastKey, in_array($attr, ['asc', 'desc']) ? $attr : 'desc');
+            $query->orderBy($lastKey, in_array($attr, ['asc', 'desc']) ? $attr : 'desc');
             unset($lastKey);
         }
 
-        return $this;
+        return $query;
     }
 
     public static function uncamelcase($key, $delimeter="_") : string
