@@ -21,7 +21,7 @@ class ModelTransformer extends AbstractTransformer
 
     public function runTransformData($model)
     {
-        $transform = ($model instanceof \Illuminate\Database\Eloquent\Collection) ? $this->collectionTransform($model) : $this->modelTransform($model);
+        $transform = ($model instanceof \Illuminate\Database\Eloquent\Collection) ? $this->collectionTransform($model) : $this->modelTransform(method_exists($model, 'transformModel') ? $model->transformModel() : $model);
         $this->setData($transform);
 
         return $this;
@@ -30,7 +30,7 @@ class ModelTransformer extends AbstractTransformer
     protected function collectionTransform($modelCollection) : Collection
     {
         return $modelCollection->transform(function ($model) {
-            return $this->modelTransform($model);
+            return $this->modelTransform(method_exists($model, 'transformModel') ? $model->transformModel() : $model);
         });
     }
 
