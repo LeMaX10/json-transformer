@@ -21,21 +21,33 @@ class ModelTransformer extends AbstractTransformer
 
     public function runTransformData($model)
     {
-        $transform = ($model instanceof \Illuminate\Database\Eloquent\Collection) ? $this->collectionTransform($model) : $this->modelTransform(method_exists($model, 'transformModel') ? $model->transformModel() : $model);
+        $transform = $this->checkTransform($model);
         $this->setData($transform);
 
         return $this;
     }
+    
+    protected function checkTransform($model)
+    {
+        if ($model instanceof \Illuminate\Database\Eloquent\Collection) {
+            return $this->collectionTransform($model);
+        }
 
+        return $this->modelTransform($model);
+    }
+    
     protected function collectionTransform($modelCollection) : Collection
     {
         return $modelCollection->transform(function ($model) {
-            return $this->modelTransform(method_exists($model, 'transformModel') ? $model->transformModel() : $model);
+            return $this->modelTransform($model);
         });
     }
 
     protected function modelTransform($model) : Collection
     {
+        if (method_exists($model, 'transformModel')) 
+            $model = $model->transformModel();
+        
         $transformCollectedModel = collect($model);
         $transformModel = new Collection([
             Transformer::ATTR_TYPE => $this->getType($model),
@@ -116,6 +128,9 @@ class ModelTransformer extends AbstractTransformer
 
         $relationsTransformer = $transformer->getRelationships();
         foreach ($model->getRelations() as $key => $relation) {
+            //TODO:  защита от дибила (Временно)
+            if($relation instanceof Collection) continue;
+
             if (!in_array($key, array_keys($relationsTransformer)) || (empty($relation) || !count($relation))) {
                 $model->setRelation($key, []);
                 continue;
