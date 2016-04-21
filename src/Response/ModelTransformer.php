@@ -128,9 +128,6 @@ class ModelTransformer extends AbstractTransformer
 
         $relationsTransformer = $transformer->getRelationships();
         foreach ($model->getRelations() as $key => $relation) {
-            //TODO:  защита от дибила (Временно)
-            if($relation instanceof Collection) continue;
-
             if (!in_array($key, array_keys($relationsTransformer)) || (empty($relation) || !count($relation))) {
                 $model->setRelation($key, []);
                 continue;
@@ -151,6 +148,9 @@ class ModelTransformer extends AbstractTransformer
                 $transformer = new $transformer();
 
             if($relation instanceof \Illuminate\Database\Eloquent\Collection) {
+                //TODO:  защита от дибила (Временно)
+                if ($relation->first() instanceof Collection) continue;
+                
                 if(empty($relations->get('relations')->get($key)))
                     $relations->get('relations')->put($key, collect([]));
 
