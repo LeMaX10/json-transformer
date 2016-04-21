@@ -39,7 +39,7 @@ class PaginationRequest extends FormRequest
 	{
 		return [
 			'page.number' => 'sometimes|required|integer',
-			'page.size' => 'sometimes|required|integer|max:50',
+			'page.size' => 'sometimes|required|integer|max:999', // wtf blade
 			'page.sort' => 'sometimes|required|string'
 		];
 	}
