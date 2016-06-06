@@ -143,7 +143,11 @@ class ModelTransformer extends AbstractTransformer
                 $transformer = $relation::getTransformer();
 
             $transformer = isset($relationsTransformer[$key]) ? $relationsTransformer[$key]['transformer'] : $transformer;
-
+            
+            if ($transformer instanceof \Closure) {
+                $transformer = $transformer($relation);
+            }
+            
             if(!is_object($transformer))
                 $transformer = new $transformer();
 
