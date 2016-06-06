@@ -47,7 +47,7 @@ class Transformer {
     public function toPaginateResponse($query, PaginationRequest $request, $defaultSort = false)
     {
         $transformData = function() use(&$request, &$query, &$defaultSort) {
-            if($includes = \Request::input('includes', false))
+            if($includes = \Request::input('includes', false) && !($query instanceof Collection))
                 $query->with(explode(',', $includes));
 
             return (new PaginateTransformer($this->transformer, $this->castTransformer, $this->merge, $request, $defaultSort))->runTransformPagination($query);
