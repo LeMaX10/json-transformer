@@ -8,6 +8,7 @@ use lemax10\JsonTransformer\Request\PaginationRequest;
 use lemax10\JsonTransformer\Response\ModelTransformer;
 use lemax10\JsonTransformer\Response\PaginateTransformer;
 use Cache;
+use Illuminate\Database\Eloquent\Collection;
 
 class Transformer {
     const GET_METHOD    = 'GET';
@@ -47,6 +48,7 @@ class Transformer {
     public function toPaginateResponse($query, PaginationRequest $request, $defaultSort = false)
     {
         $transformData = function() use(&$request, &$query, &$defaultSort) {
+            //TODO haos
             if($includes = \Request::input('includes', false) && !($query instanceof Collection))
                 $query->with(explode(',', $includes));
 
