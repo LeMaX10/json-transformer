@@ -49,8 +49,9 @@ class Transformer {
     {
         $transformData = function() use(&$request, &$query, &$defaultSort) {
             //TODO haos
-            if($includes = \Request::input('includes', false) && !($query instanceof Collection))
+            if(($includes = \Request::input('includes', false)) && !($query instanceof Collection)) {
                 $query->with(explode(',', $includes));
+            }
 
             return (new PaginateTransformer($this->transformer, $this->castTransformer, $this->merge, $request, $defaultSort))->runTransformPagination($query);
         };
