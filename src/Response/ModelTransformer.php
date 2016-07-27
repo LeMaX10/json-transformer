@@ -29,7 +29,7 @@ class ModelTransformer extends AbstractTransformer
     
     protected function checkTransform($model)
     {
-        if ($model instanceof \Illuminate\Database\Eloquent\Collection) {
+        if ($model instanceof \Illuminate\Database\Eloquent\Collection || $model instanceof Collection) {
             return $this->collectionTransform($model);
         }
 
