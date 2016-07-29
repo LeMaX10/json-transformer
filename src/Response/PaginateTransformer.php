@@ -57,6 +57,7 @@ class PaginateTransformer extends AbstractTransformer {
     protected function getMeta() : array
     {
         return [
+            'total-items' => $this->paginateQuery->total(),
             'total-pages' => $this->paginateQuery->lastPage(),
             'page-size'   => $this->paginateQuery->perPage(),
             'currentPage' => $this->paginateQuery->currentPage(),
