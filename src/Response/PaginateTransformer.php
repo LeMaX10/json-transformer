@@ -109,7 +109,7 @@ class PaginateTransformer extends AbstractTransformer {
                 continue;
             }
 
-            $query->orderBy($lastKey, in_array($attr, ['asc', 'desc']) ? $attr : 'desc');
+            $query = $query->orderBy($lastKey, in_array($attr, ['asc', 'desc']) ? $attr : 'desc');
             unset($lastKey);
         }
 
