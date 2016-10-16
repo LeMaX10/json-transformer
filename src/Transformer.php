@@ -10,6 +10,10 @@ use lemax10\JsonTransformer\Response\PaginateTransformer;
 use Cache;
 use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * @deprecated устаревший трансформер, создан переход на fractal
+ */
+
 class Transformer {
     const GET_METHOD    = 'GET';
     const POST_METHOD   = 'POST';
